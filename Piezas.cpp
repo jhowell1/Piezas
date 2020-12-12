@@ -1,4 +1,5 @@
 #include "Piezas.h"
+#include <iostream>
 #include <vector>
 /** CLASS Piezas
  * Class for representing a Piezas vertical board, which is roughly based
@@ -22,6 +23,14 @@
 **/
 Piezas::Piezas()
 {
+	// Fill board with Blank
+	for(int i = 0; i < BOARD_ROWS; ++i)
+	{
+		std::vector<Piece> newRow(BOARD_COLS, Blank);
+		board.push_back(newRow);
+	}
+	// Set turn to X
+	turn = X;
 }
 
 /**
@@ -30,6 +39,10 @@ Piezas::Piezas()
 **/
 void Piezas::reset()
 {
+	// Set each to Blank
+	for(int i = 0; i < BOARD_ROWS; ++i)
+		for(int j = 0; j < BOARD_COLS; ++j)
+			board.at(i).at(j) = Blank;
 }
 
 /**
@@ -42,7 +55,46 @@ void Piezas::reset()
 **/ 
 Piece Piezas::dropPiece(int column)
 {
-    return Blank;
+	if(column < 0 || column >= BOARD_COLS)
+	{
+		// Toggle Turn
+		if(turn == X)
+			turn = O;
+		else
+			turn = X;
+		return Invalid;
+	}
+	
+	int lastRow = BOARD_ROWS;
+	int currentRow = BOARD_ROWS - 1;
+	Piece current = pieceAt(currentRow, column);
+	while(current == Blank) // Drop as low as possible
+	{
+		--lastRow;
+		current = pieceAt(--currentRow, column);
+	}
+	
+	if(lastRow >= BOARD_ROWS) // Column full, return Blank
+	{
+		// Toggle Turn
+		if(turn == X)
+			turn = O;
+		else
+			turn = X;
+		return Blank;
+	}
+	else
+	{
+		// Place piece
+		board.at(lastRow).at(column) = turn;
+		// Toggle Turn
+		if(turn == X)
+			turn = O;
+		else
+			turn = X;
+		// Return piece
+		return pieceAt(lastRow, column);
+	}
 }
 
 /**
@@ -51,7 +103,9 @@ Piece Piezas::dropPiece(int column)
 **/
 Piece Piezas::pieceAt(int row, int column)
 {
-    return Blank;
+	if(row < 0 || row >= BOARD_ROWS || column < 0 || column >= BOARD_COLS)
+		return Invalid;
+    return board.at(row).at(column);
 }
 
 /**
@@ -64,6 +118,107 @@ Piece Piezas::pieceAt(int row, int column)
  * line, it is a tie.
 **/
 Piece Piezas::gameState()
-{
-    return Blank;
+{	
+	int sumX = 0;
+	int sumO = 0;
+	
+	// Check horizontal
+	for(int i = 0; i < BOARD_ROWS; ++i)
+	{
+		Piece current = board.at(i).at(0);
+		int currentSum = 1;
+		for(int j = 1; j < BOARD_COLS; ++j)
+		{
+			if(board.at(i).at(j) == Blank) // Game not over
+				return Invalid;
+			
+			if(board.at(i).at(j) != current) // end of adjacency
+			{
+				// Check if currentSum is new record
+				if(current == X)
+				{
+					if(currentSum > sumX)
+						sumX = currentSum;
+					// set current to other Piece, reset currentSum
+					current = O;
+					currentSum = 1;
+				}
+				else
+				{
+					if(currentSum > sumO)
+						sumO = currentSum;
+					// set current to other Piece, reset currentSum
+					current = X;
+					currentSum = 1;
+				}
+			}
+			else // adjacency continues
+				++currentSum;
+		}
+		// Check if currentSum is new record, case when adjacency continues to end of line
+		if(current == X)
+		{
+			if(currentSum > sumX)
+				sumX = currentSum;
+		}
+		else
+		{
+			if(currentSum > sumO)
+				sumO = currentSum;
+		}
+	}
+	
+	// Check Vertical
+	for(int j = 0; j < BOARD_COLS; ++j)
+	{
+		Piece current = board.at(0).at(j);
+		int currentSum = 1;
+		for(int i = 1; i < BOARD_ROWS; ++i)
+		{
+			if(board.at(i).at(j) == Blank) // Game not over
+				return Invalid;
+			
+			if(board.at(i).at(j) != current) // end of adjacency
+			{
+				// Check if currentSum is new record
+				if(current == X)
+				{
+					if(currentSum > sumX)
+						sumX = currentSum;
+					// set current to other Piece, reset currentSum
+					current = O;
+					currentSum = 1;
+				}
+				else
+				{
+					if(currentSum > sumO)
+						sumO = currentSum;
+					// set current to other Piece, reset currentSum
+					current = X;
+					currentSum = 1;
+				}
+			}
+			else // adjacency continues
+				++currentSum;
+		}
+		// Check if currentSum is new record, case when adjacency continues to end of line
+		if(current == X)
+		{
+			if(currentSum > sumX)
+				sumX = currentSum;
+		}
+		else
+		{
+			if(currentSum > sumO)
+				sumO = currentSum;
+		}
+	}
+	
+	if(sumX > sumO)
+		return X;
+	else if(sumX < sumO)
+		return O;
+	
+	// game tied, return Blank
+	return Blank;
 }
